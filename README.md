@@ -1,8 +1,10 @@
 # Lanetracker
 
-Controls an ATV with 4 stewart platforms and 24 servopneumatics actuators
+Detects lanes on for a autonomous camera
 
-It is controlled using 4 raspberry pi clients and PC server.
+**lanedetect_edges.py** uses edge detection and hough lines to detect lane edges
+
+**lanedetect_threshold.py** uses HSV thresholding and contours to detect potential lanes. Green lanes are good. Red lanes are bad.
 
 ## Dependencies:  
 - python2.7
