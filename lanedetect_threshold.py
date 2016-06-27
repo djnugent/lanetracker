@@ -38,154 +38,163 @@ class LaneDetector():
                 print "failed to grab frame"
                 continue
 
-            #undistort, crop, fix image
-            processed = self.preprocess(frame)
-            cv2.imshow("processed", processed)
-            #extract useful data
-            data = self.analyze_frame(processed)
 
+            processed = self.analyze_frame(frame)
             cv2.waitKey(1)
 
-    #clean up and process image before attempting to extract data
-    def preprocess(self,frame):
 
-        #crop
-        frame = frame[180:720]
+
+    def analyze_frame(self,frame):
 
         #remove distortion
         #frame = cv2.undistort(frame,self.matrix,self.distortion)
 
-        #hsv color space
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        #crop
+        frame = frame[180:720]
 
         #remap perspective
         frame = transform(frame, self.src_corners, self.dst_corners, self.size)
+        draw = np.copy(frame)
 
-        #blur
-        frame = cv2.blur(frame,(11,11))
-        cv2.imshow("perspective",frame)
+        #hsv color space
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        frame = cv2.split(frame)[1]
 
+        threshold = self.calculate_lane_threshold(frame,1.8)
 
-        #threshold
-        #use last frame threshold if we got a lock
-        if self.frames_since_last_detect == 0:
-            self.threshold = self.last_threshold
-        #rethreshold if we haven't gotten a lock in a few frames
-        elif self.frames_since_last_detect > 3:
-            self.threshold = self.calculate_lane_threshold(frame)
-            self.last_threshold = self.threshold
+        ret,frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        kernel = np.ones((3,3),dtype=np.uint8)
+        frame = cv2.erode(frame,kernel,iterations = 1)
 
-        frame = cv2.inRange(frame,self.threshold[0],self.threshold[1])
+        poly = np.array([[0,300],[0,639],[639,639],[639,300],[340,635],[300,635]])
+        cv2.fillPoly(frame, [poly],0)
+
+        left_line, center_line, right_line = self.find_lane(frame)
+        for pnt in left_line:
+            cv2.circle(draw,pnt,5,(255,0,0),-1)
+        for pnt in center_line:
+            cv2.circle(draw,pnt,5,(255,255,0),-1)
+        for pnt in right_line:
+            cv2.circle(draw,pnt,5,(0,0,255),-1)
+
+        cv2.imshow("lane",draw)
 
         return frame
 
 
-    #extract lane data from frame
-    def analyze_frame(self, frame):
-
-        #findContours
-        im2, contours, hierarchy = cv2.findContours(frame,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        lane = np.zeros(frame.shape + (3,),np.uint8)
-
-        #find largest contour
-        largest_per = 0
-        largest = None
-        for cnt in contours:
-            approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
-            per = cv2.arcLength(approx,True)
-            if per > largest_per:
-                largest_per = per
-                largest = approx
-
-        #bounding rectangle
-        rect = cv2.minAreaRect(largest)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        cv2.drawContours(lane,[box],0,(255,0,0),2)
-
-        (x,y),(w,h),theta = rect
-        if theta < -60:
-            temp = w
-            w = h
-            h = temp
-            theta += 90
-        #check for a "lane like" contour
-        if w > 220 or w < 100 or h < 500 or abs(theta) > 16:
-            #not a lane - color it red
-            self.frames_since_last_detect +=1
-            cv2.drawContours(lane, [largest], -1, (0,0,255), -1)
-        else:
-            #could be a lane color is green
-            self.frames_since_last_detect = 0
-            cv2.drawContours(lane, [largest], -1, (0,255,0), -1)
-
-        cv2.imshow("lane",lane)
-
-
-        '''
-        #hough line detection
-        lines = cv2.HoughLines(edges,1,np.pi/180,400)
-        blank = np.zeros(edges.shape + (3,),np.uint8)
-        if lines is not None:
-            for (rho,theta), in lines:
-
-                if math.degrees(theta) > 85 or math.degrees(theta) < 95:
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a*rho
-                    y0 = b*rho
-                    x1 = int(x0 + 1200*(-b))   # Here i have used int() instead of rounding the decimal value, so 3.8 --> 3
-                    y1 = int(y0 + 1200*(a))    # But if you want to round the number, then use np.around() function, then 3.8 --> 4.0
-                    x2 = int(x0 - 1200*(-b))   # But we need integers, so use int() function after that, ie int(np.around(x))
-                    y2 = int(y0 - 1200*(a))
-                    cv2.line(blank,(x1,y1),(x2,y2),(0,255,0),2)
-        cv2.imshow('houghlines',blank)
-        '''
-        '''
-        #hough probablistic line detection
-        lines = cv2.HoughLinesP(edges,2,np.pi/180,2, minLineLength = 100, maxLineGap = 30)
-
-        if lines is not None:
-            lines = self.get_vertical_lines(lines,10)
-            blank = np.zeros(edges.shape + (3,),np.uint8)
-            for line in lines:
-                pnt1,pnt2= line
-                cv2.line(blank,pnt1,pnt2,(255,0,0),2)
-            cv2.imshow("lines",blank)
-        '''
-
-
-    #filter hought lines for vertical lines - not used
-    def get_vertical_lines(self, lines, angle_threshold):
-        vertical_lines = []
-        for line in lines:
-            x1,y1,x2,y2 = line[0]
-
-            angle = math.degrees(math.atan2((y1-y2),(x1-x2)))
-            #first and second quadrant
-            if angle > 180:
-                angle = (angle + 180) % 360
-            if angle < 0:
-                angle = angle + 180
-            #shift left 90 degrees
-            angle -= 90
-            if angle > -angle_threshold and angle < angle_threshold:
-                if y1 > y2:
-                    vertical_lines.append([(x1,y1),(x2,y2)])
-                else:
-                    vertical_lines.append([(x2,y2),(x1,y1)])
-        return vertical_lines
-
 
     #determine lane color bounds based on a ROI
-    def calculate_lane_threshold(self,frame):
-        roi = frame[0:640,280:360]
+    def calculate_lane_threshold(self,frame,scalar):
+        roi = frame[400:620,280:360]
+        median = np.percentile(roi,50)
+        return median * scalar
 
-        #calculate max and min
-        flat = np.reshape(roi, (-1, roi.shape[-1]))
-        min_hsv = np.percentile(flat,5,axis = 0)
-        max_hsv = np.percentile(flat,95,axis = 0)
-        return min_hsv,max_hsv
+    def find_lane(self,frame):
+        w,h = frame.shape
+
+        #parameters
+        starting_y = 580                #what y pixel we start looking for the lane
+        step_y = 25                     #how many pixel we step between scans
+        line_threshold = 127            #what pixel value is considered an edge
+        max_lane_width = 200            #when we stop classifying the edge as a lane
+        max_lane_divergence = 15        #how aggressively the lane can change direction
+
+        #lane data
+        left_line = []
+        right_line = []
+        center_line = []
+
+
+        current_y = starting_y + 3
+        while True:
+            #use previous lane center as X starting point - if it exists
+            if len(center_line) > 0:
+                center_x = center_line[-1][0]
+            else:
+                center_x = w/2
+            #move up the image
+            current_y  -= step_y
+
+            #check for lane end or image end
+            if current_y < 0 or frame[current_y][center_x] > line_threshold:
+                break
+
+            #if lane hasn't ended scan left
+            cnt = 0
+            found_left_line = False
+            left_x = 0
+            while not found_left_line and cnt < max_lane_width:
+                left_x = center_x - cnt
+                if left_x < 0: #we hit the image border so we can't extract line data
+                    break
+                pixel = frame[current_y][left_x]
+                if pixel > line_threshold: #white pixel
+                    found_left_line = True
+                cnt+=1
+
+            #if lane hasn't ended scan right
+            cnt = 0
+            found_right_line = False
+            right_x = 0
+            while not found_right_line and cnt < max_lane_width:
+                right_x = center_x + cnt
+                if right_x > w - 1: #we hit the image border so we can't extract line data
+                    break
+                pixel = frame[current_y][right_x]
+                if pixel > line_threshold: #white pixel
+                    found_right_line = True
+                cnt+=1
+
+
+
+            #check for line divergance
+            if found_left_line and len(left_line)>0:
+                last_left_line = left_line[-1]
+                diff_left = abs(left_x - last_left_line[0])
+                if diff_left > max_lane_divergence:
+                    found_left_line = False
+            if found_right_line and len(right_line)>0:
+                last_right_line = right_line[-1]
+                diff_right = abs(right_x - last_right_line[0])
+                if diff_right > max_lane_divergence:
+                    found_right_line = False
+
+
+            #both lines found
+            if found_left_line and found_right_line:
+                lane_width = right_x - left_x
+                #lane is not too wide - calculate new center an check line divergance
+                if lane_width <= max_lane_width:
+                    center_x = (left_x + right_x)/2
+
+                    right_line.append((right_x,current_y))
+                    left_line.append((left_x,current_y))
+                    center_line.append((center_x,current_y))
+
+            #only found left line - try to calculate center using existing lane data
+            elif found_left_line:
+                if len(left_line) > 0 and len(center_line) > 0:
+                    last_left_line = left_line[-1]
+                    last_center_line = center_line[-1]
+                    diff = last_center_line[0] - last_left_line[0]
+                    center_x = left_x + diff
+                    center_line.append((center_x,current_y))
+                left_line.append((left_x,current_y))
+
+            #only found right line - try to calculate center
+            elif found_right_line:
+                if len(right_line) > 0 and len(center_line) > 0:
+                    last_right_line = right_line[-1]
+                    last_center_line = center_line[-1]
+                    diff = last_center_line[0] - last_right_line[0]
+                    center_x = right_x + diff
+                    center_line.append((center_x,current_y))
+                right_line.append((right_x,current_y))
+
+        return (left_line, center_line, right_line)
+
+
+
 
 
 
