@@ -96,7 +96,7 @@ class LaneDetector():
         starting_y = 580                #what y pixel we start looking for the lane
         step_y = 25                     #how many pixel we step between scans
         line_threshold = 127            #what pixel value is considered an edge
-        max_lane_width = 200            #when we stop classifying the edge as a lane
+        max_lane_width = 150            #when we stop classifying the edge as a lane
         max_lane_divergence = 15        #how aggressively the lane can change direction
 
         #lane data
