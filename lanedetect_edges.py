@@ -30,21 +30,18 @@ class LaneDetector():
 
         while True:
             ret, frame = vid.read()
+            cv2.imshow("original",frame)
             if frame is None:
                 print "failed to grab frame"
                 continue
 
-            #undistort, crop, fix image
-            processed = self.preprocess(frame)
-            cv2.imshow("processed", processed)
-            #extract useful data
-            data = self.analyze_frame(processed)
 
+            processed = self.analyze_frame(frame)
             cv2.waitKey(1)
 
 
-    #clean up and process image before attempting to extract data
-    def preprocess(self,frame):
+    #extract lane data from frame
+    def analyze_frame(self, frame):
         #grayscale
         if(len(frame.shape)>2):
             frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
@@ -56,17 +53,11 @@ class LaneDetector():
         frame = frame[180:720]
 
         #remap perspective
-        #frame = transform(frame, self.src_corners, self.dst_corners, self.size)
+        draw = transform(frame, self.src_corners, self.dst_corners, self.size)
 
         #blur the image
-        #frame = cv2.blur(frame,(11,11))
         frame = cv2.GaussianBlur(frame,(3,3),0)
-        #cv2.imshow("blur",frame)
 
-        return frame
-
-    #extract lane data from frame
-    def analyze_frame(self, frame):
 
         #adaptive canny edge detector
         avg, null, null, null = cv2.mean(frame)
@@ -74,17 +65,16 @@ class LaneDetector():
         edges = cv2.Canny(frame,avg/2,avg)
         edges = transform(edges, self.src_corners, self.dst_corners, self.size)
 
-
-
         #clean up images
-        poly = np.array([[0,410],[0,639],[639,639],[639,410],[346,635],[294,635]])
+        poly = np.array([[0,300],[0,639],[639,639],[639,300],[340,635],[300,635]])
         cv2.fillPoly(edges, [poly],0)
-        #edges = cv2.blur(edges,(11,11))
+        '''
         kernel = np.array([[0,0,1,0,0],
                             [0,0,1,0,0],
                             [0,0,1,0,0]])
         #edges = cv2.dilate(edges,kernel)
         ret, edges = cv2.threshold(edges,30,255,cv2.THRESH_BINARY)
+        '''
         cv2.imshow("edges", edges)
 
 
@@ -103,60 +93,17 @@ class LaneDetector():
         cv2.imshow("thin",skel)
         '''
 
-        '''
-        #hough line detection
-        lines = cv2.HoughLines(edges,1,np.pi/180,400)
-        blank = np.zeros(edges.shape + (3,),np.uint8)
-        if lines is not None:
-            for (rho,theta), in lines:
+        left_line, center_line, right_line = find_lane(edges)
+        for pnt in left_line:
+            cv2.circle(draw,pnt,5,(255,0,0),-1)
+        for pnt in center_line:
+            cv2.circle(draw,pnt,5,(255,255,0),-1)
+        for pnt in right_line:
+            cv2.circle(draw,pnt,5,(0,0,255),-1)
 
-                if math.degrees(theta) > 85 or math.degrees(theta) < 95:
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a*rho
-                    y0 = b*rho
-                    x1 = int(x0 + 1200*(-b))   # Here i have used int() instead of rounding the decimal value, so 3.8 --> 3
-                    y1 = int(y0 + 1200*(a))    # But if you want to round the number, then use np.around() function, then 3.8 --> 4.0
-                    x2 = int(x0 - 1200*(-b))   # But we need integers, so use int() function after that, ie int(np.around(x))
-                    y2 = int(y0 - 1200*(a))
-                    cv2.line(blank,(x1,y1),(x2,y2),(0,255,0),2)
-        cv2.imshow('houghlines',blank)
-        '''
+        cv2.imshow("lane",draw)
 
-        #hough probablistic line detection
-        lines = cv2.HoughLinesP(edges,2,np.pi/180,2, minLineLength = 100, maxLineGap = 30)
-
-        if lines is not None:
-            lines = self.get_vertical_lines(lines,10)
-            blank = np.zeros(edges.shape + (3,),np.uint8)
-            for line in lines:
-                pnt1,pnt2= line
-                cv2.line(blank,pnt1,pnt2,(255,0,0),2)
-            cv2.imshow("lines",blank)
-
-
-    #filter hought lines for vertical lines
-    def get_vertical_lines(self, lines, angle_threshold):
-        vertical_lines = []
-        for line in lines:
-            x1,y1,x2,y2 = line[0]
-
-            angle = math.degrees(math.atan2((y1-y2),(x1-x2)))
-            #first and second quadrant
-            if angle > 180:
-                angle = (angle + 180) % 360
-            if angle < 0:
-                angle = angle + 180
-            #shift left 90 degrees
-            angle -= 90
-            if angle > -angle_threshold and angle < angle_threshold:
-                if y1 > y2:
-                    vertical_lines.append([(x1,y1),(x2,y2)])
-                else:
-                    vertical_lines.append([(x2,y2),(x1,y1)])
-        return vertical_lines
-
-
+        return frame
 
 
 
