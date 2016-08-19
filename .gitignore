@@ -63,3 +63,9 @@ target/
 
 #videos
 *.mp4
+
+#ardupilot
+ardupilot/
+mav.param
+mav.tlog
+mav.tlog.raw

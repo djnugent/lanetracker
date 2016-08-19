@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 from map import Mapbox
 from dronekit import Command
+from dronekit import LocationGlobalRelative as Location
 
+# Reads classic wpl110 mission files(mission planner)
 def read_mission_wpl110(file_stream):
     missionlist=[]
     file_stream.seek(0)
@@ -30,6 +32,7 @@ def read_mission_wpl110(file_stream):
             missionlist.append(cmd)
     return missionlist
 
+# Reads qgroundcontrol json mission file
 def read_mission_json(file_stream):
     missionlist=[]
     file_stream.seek(0)
@@ -54,6 +57,7 @@ def read_mission_json(file_stream):
         missionlist.append(cmd)
     return missionlist
 
+# reads a mission file
 def read_mission(aFileName):
     #cmds = vehicle.commands
     with open(aFileName) as f:
@@ -62,7 +66,15 @@ def read_mission(aFileName):
         else:
             return read_mission_json(f)
 
+# extracts Waypoints from mission file
+def mission_to_locations(mission):
+    locations  = []
+    for cmd in mission:
+        if cmd.command == 16: #waypoint
+            locations.append(Location(cmd.x,cmd.y,cmd.z))
+    return locations
 
+# locates a lane in map image
 def find_lane_placement(img):
     w,h,c = img.shape
     img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -109,19 +121,20 @@ def find_lane_placement(img):
 
 
 if __name__ == '__main__':
+
     mapbox = Mapbox(username = 'djnugent', style_id = 'cirwqwpwc001sgwkoo9nok0l2')
 
-    mission_list = read_mission("test.mission")
+    mission_list = read_mission("thunderhill.mission")
+
+    print "Loaded {} waypoints".format(len(mission_list))
 
     for wp in mission_list:
-        lat = wp.x
-        lon = wp.y
-        code, img = mapbox.static_image(lat=lat,lon=lon,zoom=20)
-
+        code, img = mapbox.static_image(lat=wp.x,lon=wp.y,zoom=20)
         if code == 200:
             draw = np.copy(img)
             w,h,c = img.shape
 
+            #extract lane data and draw it
             deg, left_rad, right_rad = find_lane_placement(img)
             lx = int(w/2 + left_rad*math.cos(math.radians(deg)))
             ly = int(h/2 - left_rad*math.sin(math.radians(deg)))
@@ -134,6 +147,7 @@ if __name__ == '__main__':
 
 
             cv2.imshow('map',draw)
+            print "Press any key(on image) to continue"
             cv2.waitKey(0)
         else:
             print code
