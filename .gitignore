@@ -63,6 +63,7 @@ target/
 
 #videos
 *.mp4
+vids/
 
 #ardupilot
 ardupilot/

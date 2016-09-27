@@ -4,7 +4,19 @@ import numpy as np
 import math
 from helpers import *
 
+'''
+lanedetect_edges.py - Detects lane using canny edge detection. Wish it worked better due to it's
+                    versatility in varying lighting conditions, but it gets confused by highly
+                    textured environments. Currently executes on a static file "test.mp4"
 
+parameters  - video source: currently test.mp4
+            - perspective mapping characteristics: Have to be hard coded if the camera's FOV, angle, height, or image size changed
+                * This is a trial and error process for your video source
+            - distortion characteristics: Currently not used but can be calculated using openCV
+
+
+usage - python lanedetect_edges.py
+'''
 
 class LaneDetector():
 
@@ -108,5 +120,5 @@ class LaneDetector():
 
 
 if __name__ == '__main__':
-    detector = LaneDetector("test.mp4")
+    detector = LaneDetector("../test.mp4")
     detector.main()

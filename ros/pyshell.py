@@ -3,6 +3,11 @@ import time
 import os
 
 
+'''
+pyshell.py - Library used to execute shell commands from python scripts
+'''
+
+
 processes = []
 
 @classmethod
@@ -14,6 +19,7 @@ def sys_call(cmd,wait=True):
         return out.decode("utf-8"), error.decode("utf-8"), cmd
     else:
         processes.append(p)
+        
 @staticmethod
 def kill_all():
     for p in processes:

@@ -1,9 +1,12 @@
 '''
+gokart.py - This script is intended to be the launcher script for gokart if it utilized ROS
+            It is incomplete but documented on the intended used
+
 parse args
 --onboard : runs the autopilot, camera node, and CV node on the car
---client  : runs the autopilot, camera node on the car, and CV node offboard
+--client  : runs the autopilot, camera node on the car(streams video to server), and CV node offboard
 --server  : runs CV node on a laptop
---sim     : simulates the entire echo system
+--sim     : simulates the entire echo system(Gazebo - Camera, SITL - autopilot)
 '''
 
 def sys_call(cmd,wait=False):

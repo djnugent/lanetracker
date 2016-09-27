@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 
-
+'''
+helpers.py - general CV helper functions
+'''
 
 def transform(img,src_corners,dst_corners,size):
     #project image

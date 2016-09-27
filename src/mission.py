@@ -2,9 +2,21 @@ import json
 import math
 import cv2
 import numpy as np
-from map import Mapbox
+from mapbox import Mapbox
 from dronekit import Command
 from dronekit import LocationGlobalRelative as Location
+
+
+'''
+mission.py - Script which reads a MAV mission file and identifies lane placement of a waypoints
+
+parameters -    mission file : currently thunderhill.py
+                mapbox tileset : currently a custom thunderhill tileset
+
+usage - python mission.py
+'''
+
+
 
 # Reads classic wpl110 mission files(mission planner)
 def read_mission_wpl110(file_stream):
@@ -124,7 +136,7 @@ if __name__ == '__main__':
 
     mapbox = Mapbox(username = 'djnugent', style_id = 'cirwqwpwc001sgwkoo9nok0l2')
 
-    mission_list = read_mission("thunderhill.mission")
+    mission_list = read_mission("../thunderhill.mission")
 
     print "Loaded {} waypoints".format(len(mission_list))
 

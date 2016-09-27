@@ -1,10 +1,14 @@
 # Lanetracker
 
-Detects lanes on for a autonomous camera
+Detects lanes on for an autonomous gokart(plus more!). It contains a lot of experimental code for creating a self driving gokart. The code needs some work to become a demoable project. But the code that exists provides a lot of base functionality. Someone just needs to go in a plug it all together.
 
-**lanedetect_edges.py** uses edge detection and hough lines to detect lane edges
+For more information click through the directories
 
-**lanedetect_threshold.py** uses HSV thresholding. Blue is the left lane. Red is the right lane. Teal is the center lane
+## TODO
+- Improve lane tracker with kmean segmentation
+- Thread **navigation.py** and allow for heading nudging
+- Mathematically solve camera projection matrix
+
 
 ## Dependencies:  
 - python2.7

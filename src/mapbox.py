@@ -4,11 +4,23 @@ import cv2
 import numpy as np
 import os
 
+'''
+mapbox.py - This library is a python wrapper for the mapbox static API
+
+parameters -    access token : Be sure you have set your MAPBOX_ACCESS_TOKEN environment variable or provide to the constrcutor
+                username : owner of the tileset, usually mapbox for stock tilesets or your username for user made tilesets
+                style id : tileset id from the specified user
+
+'''
+
 class Mapbox():
 
     def __init__(self, username = 'mapbox', style_id = 'streets-v8', access_token = None):
         #get access_token from enviroment or program
         self.access_token =  access_token or os.environ.get('MapboxAccessToken') or os.environ.get('MAPBOX_ACCESS_TOKEN')
+
+        if self.access_token is None:
+            print "WARNING: Be sure you have set your MAPBOX_ACCESS_TOKEN environment variable or pass access_token into constrcutor"
 
         self.username = username
         self.style_id = style_id

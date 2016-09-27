@@ -1,4 +1,7 @@
 
+'''
+gokart_setup.py - a script intended to setup a proper environment
+'''
 
 
 def client():

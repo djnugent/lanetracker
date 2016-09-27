@@ -4,6 +4,10 @@ import IPython
 from geometry_msgs.msg import PoseStamped, TwistStamped, Twist, Vector3
 from gazebo_msgs.msg import ModelState, ModelStates
 
+'''
+MAVGazBridge.py - A script which uses ROS to subscribe to mavros and publishe pose data to gazebo for visualization.
+                    *Gazebo is only acting as a visualizer, NOT a physics simulator
+'''
 
 
 class MAVGazBridge():
@@ -23,8 +27,6 @@ class MAVGazBridge():
         self.pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
 
         rospy.spin()
-
-
 
 
     def pose_callback(self,mav_pose):

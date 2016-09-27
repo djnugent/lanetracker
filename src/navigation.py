@@ -5,6 +5,19 @@ from mission import read_mission, mission_to_locations
 from position_vector import PositionVector
 
 
+'''
+navigation.py - Drives the rover on a mission using RC_OVERRIDES. Currently runs as it's own script.
+                I would like to turn it into a library and thread it. It is very stupid and will CRASH
+                the rover if the user interferes at all. IT SHOULD ONLY BE USED IN SITL
+
+parameters  - mission file : currently thunderhill.mission
+
+note    - add this line "thunderhill=39.53901277,-122.33117926,25,180" to ardupilot/Tool/autotest/locations.txt
+        and launch SITL using "sim_vehicle.sh -L thunderhill" in order to launch sitl at thunderhill
+        - the mission file can be modified using qgroundcontrol
+'''
+
+
 #connect to sitl
 vehicle = connect("127.0.0.1:14551", wait_ready=True,rate=50)
 
@@ -41,7 +54,7 @@ while not vehicle.home_location:
 PositionVector.set_home_location(vehicle.home_location)
 
 #Read waypoints from mission file
-waypoints = mission_to_locations(read_mission("thunderhill.mission"))
+waypoints = mission_to_locations(read_mission("../thunderhill.mission"))
 
 #navigate waypoints in manual mode
 DIST_THRESH = 4 #distance to waypoint before moving onto next waypoint

@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     NPOINTS = 10
 
-    seed(5)
+    seed(3)
     points = []
     for i in xrange(NPOINTS):
         points.append(randpt())
@@ -116,6 +116,5 @@ if __name__ == '__main__':
     for p in cpoints:
         i+=1
         turtle.goto(p)
-    print(cpoints[34])
 
     turtle.mainloop()

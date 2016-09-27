@@ -4,7 +4,19 @@ import numpy as np
 import math
 from helpers import *
 
+'''
+lanedetect_threshold.py - Detects lane using HSV thresholding.Works better than **lanedetect_edges.py**
+                        but still susceptible to varying lighting conditions and highly dynamic scenes.
+                        Would like to replace with kmean segmentation. Currently executes on a static file "test.mp4"
 
+parameters  - video source: currently test.mp4
+            - perspective mapping characteristics: Have to be hard coded if the camera's FOV, angle, height, or image size changed
+                * This is a trial and error process for your video source
+            - distortion characteristics: Currently not used but can be calculated using openCV
+            - threshold_scale : scales the threshold value. It varies with the footage provide.
+
+usage - python lanedetect_threshold.py
+'''
 
 class LaneDetector():
 
@@ -61,7 +73,8 @@ class LaneDetector():
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         frame = cv2.split(frame)[1]
 
-        threshold = self.calculate_lane_threshold(frame,1.8)
+        threshold_scale = 1.8
+        threshold = self.calculate_lane_threshold(frame,threshold_scale)
 
         ret,frame = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
         kernel = np.ones((3,3),dtype=np.uint8)
@@ -93,9 +106,6 @@ class LaneDetector():
 
 
 
-
-
-
 if __name__ == '__main__':
-    detector = LaneDetector("test.mp4")
+    detector = LaneDetector("../test.mp4")
     detector.main()
