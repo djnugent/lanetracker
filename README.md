@@ -1,6 +1,6 @@
 # Lanetracker
 
-Detects lanes on for an autonomous gokart(plus more!). It contains a lot of experimental code for creating a self driving gokart. The code needs some work to become a demoable project. But the code that exists provides a lot of base functionality. Someone just needs to go in a plug it all together.
+Detects lanes on for an autonomous gokart(plus more!). It contains a lot of experimental code for creating a self driving gokart. The code needs some work to become a demoable project. But the code that exists provides a lot of the base functionality. Someone just needs to go in and plug it all together.
 
 For more information click through the directories
 
